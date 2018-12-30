@@ -9,7 +9,7 @@ include("tikz.jl")
 
 # * Key type
 
-struct Key
+mutable struct Key
     legend::String
     width::Float64
     height::Float64
@@ -34,7 +34,7 @@ Base.convert(::Type{MIME"text/tikz"}, key::Key, U::Length) =
 
 # * Space type
 
-struct Space
+mutable struct Space
     width::Float64
     height::Float64
 end
@@ -49,6 +49,13 @@ function gen_space(args)
     height = parse(Float64, get(args, b, "1"))
     Space(width, height)
 end
+
+Base.convert(::Type{MIME"text/tikz"}, space::Space, U::Length) =
+    tikz_node("",
+              "anchor" => "north west",
+              "fill", "rectangle", "rounded corners",
+              "minimum width" => space.width*U,
+              "minimum height" => space.height*U)
 
 # * Row type
 
@@ -66,9 +73,11 @@ mutable struct Keyboard
     rows::Vector{Row}
     U::Length
     clearance::Length
+    extra_clearance::Bool
 end
-Keyboard(rows::Vector{Row} = Row[]; U::Length = 18u"mm", clearance::Length = 1u"mm") =
-    Keyboard(rows, U, clearance)
+Keyboard(rows::Vector{Row} = Row[]; U::Length = 18u"mm",
+         clearance::Length = 1u"mm", extra_clearance::Bool = true) =
+    Keyboard(rows, U, clearance, extra_clearance)
 
 function keyboard(fun::Function; kwargs...)
     kbd = Keyboard()
@@ -82,7 +91,18 @@ end
 
 function Base.push!(kbd::Keyboard, key::Union{Key,Space})
     isempty(kbd.rows) && nextrow!(kbd)
+    if kbd.extra_clearance
+        key.width += kbd.clearance*floor(Int,key.width - 1.0)/kbd.U |> NoUnits
+        key.height += kbd.clearance*max(0,floor(Int,key.height - 1.0))/kbd.U |> NoUnits
+    end
     push!(kbd.rows[end], key)
+end
+
+function Base.push!(kbd::Keyboard, row::Row)
+    nextrow!(kbd)
+    for key in row
+        push!(kbd, key)
+    end
 end
 
 function Base.show(io::IO, ::MIME"text/plain", kbd::Keyboard)
@@ -122,7 +142,7 @@ macro keyboard_str(spec)
     quote
         keyboard() do kbd
             for row in $rows
-                push!(kbd.rows, gen_row(row))
+                push!(kbd, gen_row(row))
             end
         end
     end
