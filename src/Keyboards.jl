@@ -51,7 +51,7 @@ end
 
 Base.convert(::Type{TikZnode}, space::Space, U::Length) =
     TikZnode("",
-             "fill", "rectangle", "rounded corners",
+             "rectangle", "rounded corners",
              "minimum width" => space.width*U,
              "minimum height" => space.height*U)
 
