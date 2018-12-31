@@ -197,8 +197,8 @@ function Base.convert(::Type{TikzPicture}, kbd::Keyboard; kwargs...)
     TikzPicture(rows; kwargs...)
 end
 
-TikzPictures.save(f::S, kbd::Keyboard) where {S<:TikzPictures.SaveType} =
-    save(f, convert(TikzPicture, kbd, preamble=preamble))
+TikzPictures.save(f::S, kbd::Keyboard; kwargs...) where {S<:TikzPictures.SaveType} =
+    save(f, convert(TikzPicture, kbd; preamble=preamble, kwargs...))
 
 export @keyboard_str
 

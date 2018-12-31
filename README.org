@@ -25,9 +25,9 @@ Small experiment to generate keyboards with custom layouts.
     : $⇥$:1.75 Q W E R T
     : ctrl:1.75 A S D [F] G
     $⇧$:1.75 ` Z X C V B
-    fn ctrl alt⌥:1.25 $⌘$:1.25 space:2.25 $←$:1.5
+    mod1 ctrl alt:1.25 cmd:1.25 space:2.25 $←$:1.5
   """
-  save(SVG("test_keyboard_left"), left)
+  save(SVG("test_keyboard_left"), left, options="font=\\LARGE")
 #+END_SRC
 
 [[file:test_keyboard_left.svg]]
@@ -38,9 +38,9 @@ Small experiment to generate keyboards with custom layouts.
     Y U I O P [ ] $↩$:1:2
     H [J] K L ; ' \backslash :
     N M , . / $⇧$:2 :0.25 $▲$
-    space:2.25 $↩$:2 $⌘$ alt⌥ $◀$ $▼$ $▶$
+    space:2.25 $↩$:2 cmd alt $◀$ $▼$ $▶$
   """
-  save(SVG("test_keyboard_right"), right)
+  save(SVG("test_keyboard_right"), right, options="font=\\LARGE")
 #+END_SRC
 
 [[file:test_keyboard_right.svg]]
