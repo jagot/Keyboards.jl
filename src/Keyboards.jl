@@ -25,8 +25,27 @@ end
 
 Base.show(io::IO, key::Key) = write(io, " ", key.legend, " ")
 
+const tikz_legends = Dict("ctrl" => "\$\ue0fb\$",
+                          "ret" => "\$\ue0fc\$",
+                          "esc" => "\$\ue0fd\$",
+                          "cmd" => "\$\ue0fe\$",
+                          "tab" => "\$\ue0ff\$",
+                          "space" => "\$\ue100\$",
+                          "del" => "\$\ue101\$",
+                          "alt" => "\$\ue102\$",
+                          "option" => "\$\ue103\$",
+                          "enter" => "\$\ue105\$",
+                          "shift" => "\$\ue106\$",
+                          "mod1" => "\$\ue107\$",
+                          "mod2" => "\$\ue108\$")
+
+function tikz_legend(legend::String)
+    l = get(tikz_legends, legend, legend)
+    isascii(l) ? "\\textsf{$l}" : l
+end
+
 Base.convert(::Type{TikZnode}, key::Key, U::Length) =
-    TikZnode(key.legend,
+    TikZnode(tikz_legend(key.legend),
              "draw", "rectangle", "rounded corners",
              "minimum width" => key.width*U,
              "minimum height" => key.height*U)
