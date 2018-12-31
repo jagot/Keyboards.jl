@@ -1,0 +1,46 @@
+#+TITLE: Keyboards.jl
+#+AUTHOR: Stefanos Carlström
+#+EMAIL: stefanos.carlstrom@gmail.com
+
+#+PROPERTY: header-args:julia :session *julia-README*
+
+Small experiment to generate keyboards with custom layouts.
+
+
+#+BEGIN_SRC julia :exports none
+  using Pkg
+  Pkg.activate(".")
+#+END_SRC
+
+#+BEGIN_SRC julia :exports code
+  using Keyboards
+  using TikzPictures
+  using Unitful
+#+END_SRC
+
+
+#+BEGIN_SRC julia :exports code
+  left = keyboard"""
+    :1.75 § 1 2 3 4 5
+    : $⇥$:1.75 Q W E R T
+    : ctrl:1.75 A S D [F] G
+    $⇧$:1.75 ` Z X C V B
+    fn ctrl alt⌥:1.25 $⌘$:1.25 space:2.25 $←$:1.5
+  """
+  save(SVG("test_keyboard_left"), left)
+#+END_SRC
+
+[[file:test_keyboard_left.svg]]
+
+#+BEGIN_SRC julia :exports code
+  right = keyboard"""
+    6 7 8 9 0 - = $←$:1.5
+    Y U I O P [ ] $↩$:1:2
+    H [J] K L ; ' \backslash :
+    N M , . / $⇧$:2 :0.25 $▲$
+    space:2.25 $↩$:2 $⌘$ alt⌥ $◀$ $▼$ $▶$
+  """
+  save(SVG("test_keyboard_right"), right)
+#+END_SRC
+
+[[file:test_keyboard_right.svg]]
