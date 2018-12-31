@@ -25,12 +25,11 @@ end
 
 Base.show(io::IO, key::Key) = write(io, " ", key.legend, " ")
 
-Base.convert(::Type{MIME"text/tikz"}, key::Key, U::Length) =
-    tikz_node(key.legend,
-              "anchor" => "north west",
-              "draw", "rectangle", "rounded corners",
-              "minimum width" => key.width*U,
-              "minimum height" => key.height*U)
+Base.convert(::Type{TikZnode}, key::Key, U::Length) =
+    TikZnode(key.legend,
+             "draw", "rectangle", "rounded corners",
+             "minimum width" => key.width*U,
+             "minimum height" => key.height*U)
 
 # * Space type
 
@@ -50,12 +49,11 @@ function gen_space(args)
     Space(width, height)
 end
 
-Base.convert(::Type{MIME"text/tikz"}, space::Space, U::Length) =
-    tikz_node("",
-              "anchor" => "north west",
-              "fill", "rectangle", "rounded corners",
-              "minimum width" => space.width*U,
-              "minimum height" => space.height*U)
+Base.convert(::Type{TikZnode}, space::Space, U::Length) =
+    TikZnode("",
+             "fill", "rectangle", "rounded corners",
+             "minimum width" => space.width*U,
+             "minimum height" => space.height*U)
 
 # * Row type
 
@@ -74,10 +72,12 @@ mutable struct Keyboard
     U::Length
     clearance::Length
     extra_clearance::Bool
+    gravity::Symbol
 end
 Keyboard(rows::Vector{Row} = Row[]; U::Length = 18u"mm",
-         clearance::Length = 1u"mm", extra_clearance::Bool = true) =
-    Keyboard(rows, U, clearance, extra_clearance)
+         clearance::Length = 0.2u"mm", extra_clearance::Bool = false,
+         gravity::Symbol = :nw) =
+    Keyboard(rows, U, clearance, extra_clearance, gravity)
 
 function keyboard(fun::Function; kwargs...)
     kbd = Keyboard()
@@ -152,6 +152,11 @@ end
 
 function Base.convert(::Type{TikzPicture}, kbd::Keyboard; kwargs...)
     @unpack U,clearance = kbd
+    gravity,direction = if kbd.gravity == :nw
+        "north west",1
+    else
+        "north east",-1
+    end
     l = U + clearance
     i = 0
     rows = map(kbd.rows) do row
@@ -159,11 +164,13 @@ function Base.convert(::Type{TikzPicture}, kbd::Keyboard; kwargs...)
         i += 1
         tikz_scope("yshift"=>y) do
             x = 0u"mm"
-            map(row) do key
+            map(direction == 1 ? row : reverse(row)) do key
                 ox = x
-                x += clearance + (key.width*U)
+                x += direction*(clearance + (key.width*U))
                 tikz_scope("xshift"=>ox) do
-                    convert(MIME"text/tikz", key, kbd.U)
+                    key_node = convert(TikZnode, key, kbd.U)
+                    push!(key_node.args, "anchor" => gravity)
+                    convert(MIME"text/tikz", key_node)
                 end
             end |> k -> join(k, "\n")
         end
