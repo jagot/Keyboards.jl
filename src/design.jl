@@ -87,7 +87,7 @@ end
 Keyboard(rows::Vector{Row} = Row[]; U::Length = 18u"mm",
          clearance::Length = 0.2u"mm", extra_clearance::Bool = false,
          gravity::Symbol = :nw) =
-    Keyboard(rows, U, clearance, extra_clearance, gravity)
+             Keyboard(rows, U, clearance, extra_clearance, gravity)
 
 function keyboard(fun::Function; kwargs...)
     kbd = Keyboard()
@@ -177,6 +177,78 @@ function coordinates(kbd::Keyboard, x₀::Length=0u"mm", y₀::Length=0u"mm")
     end
 end
 
+function Base.unique!(v::Vector{T}, s::T, e::T) where T
+    length(v) > length(s:e) &&
+        throw(ArgumentError("Impossible to shift elements of vector with only $(length(s:e)) choices available"))
+
+    while !allunique(v)
+        function shift!(i::Int, d::Int)
+            di,sel = if d < 0
+                d = -d
+                -1,d:i
+            else
+                1,i:d
+            end
+            for j in sel
+                v[j] += di
+            end
+        end
+
+        i = findfirst(i -> v[i]==v[i-1], 2:length(v))
+        fwd = findfirst(j -> v[j] < (j < length(v) ? v[j+1]-1 : e), i+1:length(v))
+        bwd = findfirst(j -> v[j] > (j > 1 ? v[j-1]+1 : s), 1:i-1)
+
+        if fwd != nothing || bwd != nothing
+            if fwd != nothing && bwd != nothing && fwd < abs(i-bwd) || fwd != nothing
+                shift!(i+1, fwd+i)
+            else
+                shift!(i, -(bwd+1))
+            end
+        else
+            throw(ArgumentError("Cannot continue, no shift will improve uniqueness"))
+        end
+    end
+
+    v
+end
+
+function find_columns(kbd::Keyboard)
+    coords = map(coordinates(kbd)) do row
+        filter(k -> k[:key] isa Keyboards.Key, row)
+    end
+    num_columns = 0
+    maxi = 0
+    centers = map(enumerate(coords)) do (i,row)
+        num_columns = max(num_columns, length(row))
+        length(row) == num_columns && (maxi = i)
+        map(row) do key
+            key[:centerx],key[:centery]
+        end
+    end
+    @info "$(num_columns) columns required"
+    @info "Row # with max columns: $(maxi)"
+    column_centers = first.(centers[maxi])
+
+    key_mappings = map(coords) do row
+        mapping = map(row) do key
+            argmin(abs.(key[:centerx] .- column_centers))
+        end
+        unique!(mapping, 1, num_columns)
+        map(enumerate(mapping)) do (i,c)
+            c => row[i]
+        end
+    end
+
+    columns = [x => Dict[] for x in column_centers]
+    for row in key_mappings
+        for k in row
+            push!(columns[k[1]][2], k[2])
+        end
+    end
+
+    columns
+end
+
 # * TikZ conversion
 
 function Base.convert(::Type{TikzPicture}, kbd::Keyboard; draw_centers::Bool=false, kwargs...)
@@ -197,7 +269,9 @@ function Base.convert(::Type{TikzPicture}, kbd::Keyboard; draw_centers::Bool=fal
                     push!(key_node.args, "anchor" => gravity)
                     kns = convert(MIME"text/tikz", key_node)
                     kns * if draw_centers
+                        id = key isa Key ? "k"*string(hash(key)) : ""
                         center_node = TikZnode("", "red", "draw", "circle",
+                                               id = id,
                                                x = coords[i][j][:centerx]-x,
                                                y = coords[i][j][:centery]-y)
                         convert(MIME"text/tikz", center_node)
@@ -208,7 +282,17 @@ function Base.convert(::Type{TikzPicture}, kbd::Keyboard; draw_centers::Bool=fal
             end |> k -> join(k, "\n")
         end
     end |> r -> join(r, "\n") |> indent
-    TikzPicture(rows; kwargs...)
+    columns = if draw_centers
+        map(find_columns(kbd)) do (column,keys)
+            c = map(keys) do key
+                "(k$(hash(key[:key])))"
+            end |> k -> join(k, " -- ")
+            "\\draw[red] $(c);"
+        end |> c -> join(c, "\n") |> indent
+    else
+        ""
+    end
+    TikzPicture(rows*"\n"*columns; kwargs...)
 end
 
 TikzPictures.save(f::S, kbd::Keyboard; kwargs...) where {S<:TikzPictures.SaveType} =
