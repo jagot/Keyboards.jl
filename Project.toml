@@ -4,6 +4,8 @@ authors = ["Stefanos Carlström <stefanos.carlstrom@gmail.com>"]
 version = "0.1.0"
 
 [deps]
+Circuits = "afbeee68-0d01-11e9-1fc1-f18836fa970c"
+PCBs = "a943b7ec-0e02-11e9-2347-d77b7f90756a"
 Parameters = "d96e819e-fc66-5662-9728-84c9c7592b0a"
 TikzPictures = "37f6aa50-8035-52d0-81c2-5a1d08754b2d"
 Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
