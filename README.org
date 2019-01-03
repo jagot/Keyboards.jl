@@ -44,3 +44,19 @@ Small experiment to generate keyboards with custom layouts.
 #+END_SRC
 
 [[file:test_keyboard_right.svg]]
+
+It is possible to generate a [[https://github.com/jagot/Circuit.jl][Circuit]] from a =Keyboard=, and from the
+=Circuit= a [[https://github.com/jagot/PCBs.jl][PCB]], or directly from =Keyboard= to =PCB= (path necessary
+to find parts footprints, varies between platforms):
+#+BEGIN_SRC julia
+  using PCBs
+
+  ENV["KISYSMOD"] = "/Library/Application Support/kicad/modules"
+  PCBs.save(convert(PCB, left, "left"), true)
+  run(`open left.kicad_pcb`)
+#+END_SRC
+
+This will give the following PCB (connections have to be manually
+added, at present):
+
+[[file:left-pcb.svg]]
