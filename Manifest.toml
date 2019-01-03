@@ -27,7 +27,7 @@ version = "0.5.2"
 
 [[Circuits]]
 deps = ["CSV", "DataFrames", "SparseArrays", "TikzPictures", "UnicodeFun", "Unitful"]
-git-tree-sha1 = "5771488bccfd854bdf6b6b0b109d773037132ee6"
+git-tree-sha1 = "ca98844d2cb20a963b93dee75cf56ffcf0e83023"
 repo-rev = "master"
 repo-url = "https://github.com/jagot/Circuits.jl.git"
 uuid = "afbeee68-0d01-11e9-1fc1-f18836fa970c"
@@ -129,7 +129,7 @@ version = "1.0.2"
 
 [[PCBs]]
 deps = ["Automa", "Circuits"]
-git-tree-sha1 = "d4358da6fd314a914c719acc058c579e49d81ead"
+git-tree-sha1 = "4e75b3ac2e36bc3cfc6d24f1857406a99950364b"
 repo-rev = "master"
 repo-url = "https://github.com/jagot/PCBs.jl.git"
 uuid = "a943b7ec-0e02-11e9-2347-d77b7f90756a"

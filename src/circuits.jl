@@ -26,8 +26,50 @@ function key1u(x₀, y₀; Dx = 8.5, Dy = 11, Drot = -150)
     connect!(c, S, 1, D, "+")
     unique_labels!(c)
     key = SubCircuit(c, S=>2, D=>"-")
+    # Keys in the same column connect to pin 1 of the subcircuit; keys
+    # in the same row connect to pin 2.
 
     segment = PCBs.Segment("B.Cu", "Net", sx₀, sy₀, 0, 7.268, 0.25)
 
     key,segment
 end
+
+function Base.convert(::Type{Circuit}, kbd::Keyboard)
+    x₀ = 0
+    y₀ = 0
+
+    l = 15
+    dx = l
+    dy = l
+
+    nrows = 5
+    ncols = 7
+
+    zl = 14.224
+    zx₀ = x₀
+    zy₀ = y₀
+
+    key_circuit,key_segment = key1u(x₀, y₀)
+    keyboard = Circuit()
+
+    columns = Dict{Int,Int}()
+    rows = Dict{Int,Int}()
+
+    map(enumerate(find_columns(kbd))) do (j,(col,col_keys))
+        column = []
+        for key in col_keys
+            x,y,row = key[:centerx],key[:centery],key[:row]
+            conn = []
+            j ∈ keys(columns) && push!(conn, 1 => columns[j])
+            row ∈ keys(rows) && push!(conn, 2 => rows[row])
+            a,b = attach!(keyboard, translate(key_circuit, dx=x/u"mm", dy=-y/u"mm"), conn...)
+            columns[j] = a
+            rows[row] = b
+        end
+    end
+
+    keyboard
+end
+
+Base.convert(::Type{PCB}, kbd::Keyboard, name::String) =
+    PCB(convert(Circuit, kbd), name)

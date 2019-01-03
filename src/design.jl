@@ -240,8 +240,9 @@ function find_columns(kbd::Keyboard)
     end
 
     columns = [x => Dict[] for x in column_centers]
-    for row in key_mappings
+    for (i,row) in enumerate(key_mappings)
         for k in row
+            k[2][:row] = i
             push!(columns[k[1]][2], k[2])
         end
     end
