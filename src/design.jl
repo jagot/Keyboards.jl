@@ -158,29 +158,52 @@ macro keyboard_str(spec)
     end
 end
 
+function coordinates(kbd::Keyboard, x₀::Length=0u"mm", y₀::Length=0u"mm")
+    direction = kbd.gravity == :nw ? 1 : -1
+    @unpack U,clearance = kbd
+    l = U + clearance
+    i = 0
+    map(enumerate(kbd.rows)) do (i,row)
+        y = y₀ - (i-1)*l
+        x = x₀
+        map(enumerate(row)) do (j,key)
+            ox = x
+            x += direction*(clearance + key.width*U)
+            Dict(:x => ox, :y => y,
+                 :centerx => ox + direction*key.width*U/2,
+                 :centery => y - direction*key.height*U/2,
+                 :key => key)
+        end
+    end
+end
+
 # * TikZ conversion
 
-function Base.convert(::Type{TikzPicture}, kbd::Keyboard; kwargs...)
+function Base.convert(::Type{TikzPicture}, kbd::Keyboard; draw_centers::Bool=false, kwargs...)
     @unpack U,clearance = kbd
     gravity,direction = if kbd.gravity == :nw
         "north west",1
     else
         "north east",-1
     end
-    l = U + clearance
-    i = 0
-    rows = map(kbd.rows) do row
-        y = -i*l
-        i += 1
+    coords = coordinates(kbd)
+    rows = map(enumerate(kbd.rows)) do (i,row)
+        y = first(coords[i])[:y]
         tikz_scope("yshift"=>y) do
-            x = 0u"mm"
-            map(direction == 1 ? row : reverse(row)) do key
-                ox = x
-                x += direction*(clearance + (key.width*U))
-                tikz_scope("xshift"=>ox) do
+            map(enumerate(row)) do (j,key)
+                x = coords[i][j][:x]
+                tikz_scope("xshift"=>x) do
                     key_node = convert(TikZnode, key, kbd.U)
                     push!(key_node.args, "anchor" => gravity)
-                    convert(MIME"text/tikz", key_node)
+                    kns = convert(MIME"text/tikz", key_node)
+                    kns * if draw_centers
+                        center_node = TikZnode("", "red", "draw", "circle",
+                                               x = coords[i][j][:centerx]-x,
+                                               y = coords[i][j][:centery]-y)
+                        convert(MIME"text/tikz", center_node)
+                    else
+                        ""
+                    end
                 end
             end |> k -> join(k, "\n")
         end
